@@ -1,0 +1,1547 @@
+import { Button, VerticalBox, HorizontalBox, ScrollView, LineEdit, ListView } from "std-widgets.slint";
+
+export struct Thumbnail {
+    path: string,
+    label: string,
+    is_active: bool,
+    image: image,
+    visible: bool,
+    selected: bool,
+}
+
+export struct AssetItem {
+    path: string,
+    name: string,
+    size: string,
+    modified: string,
+    selected: bool,
+    is_active: bool,
+}
+
+export global L10n {
+    in-out property <string> open_file: "Open File";
+    in-out property <string> open_folder: "Open Folder";
+    in-out property <string> reset_transform: "Reset Transform";
+    in-out property <string> rotate_left: "Rotate Left";
+    in-out property <string> rotate_right: "Rotate Right";
+    in-out property <string> flip_h: "Flip Horizontal";
+    in-out property <string> flip_v: "Flip Vertical";
+    in-out property <string> prev_image: "Previous Image";
+    in-out property <string> next_image: "Next Image";
+    in-out property <string> asset_browser: "Asset Browser";
+    in-out property <string> gallery_toggle: "Gallery";
+    in-out property <string> slideshow_play: "Play";
+    in-out property <string> slideshow_pause: "Pause";
+    in-out property <string> pin_toolbar: "Pin Toolbar";
+    in-out property <string> status_ready: "Ready";
+    in-out property <string> scroll_zoom_mode: "Scroll: Zoom Image";
+    in-out property <string> scroll_navigate_mode: "Scroll: Prev/Next Image";
+    in-out property <string> drag_hint: "Drag images here";
+    in-out property <string> supported_formats: "Supports JPG, PNG, BMP, GIF, WebP, TIFF";
+    in-out property <string> long_image_mode_on: "Long Image Mode (ON)";
+    in-out property <string> long_image_mode_off: "Long Image Mode (OFF)";
+    
+    // Context Menu
+    in-out property <string> reveal_in_explorer: "Reveal in Explorer";
+    in-out property <string> copy_image: "Copy Image";
+    in-out property <string> copy_file: "Copy File";
+    in-out property <string> copy_path: "Copy Path";
+    in-out property <string> save_as: "Save As...";
+    in-out property <string> open_external: "Open in External Editor";
+    in-out property <string> set_wallpaper: "Set as Wallpaper";
+    in-out property <string> delete_file: "Delete File";
+    in-out property <string> update_shell: "Update Context Menu";
+    
+    // Settings UI labels
+    in-out property <string> settings_title: "Settings";
+    in-out property <string> tile_size_label: "GPU Tile Size (restart required)";
+    in-out property <string> max_cache_label: "Max VRAM Cache (MB)";
+    in-out property <string> hud_delay_label: "HUD Auto-hide Delay (ms)";
+    in-out property <string> fallback_label: "Fallback Texture Size";
+    in-out property <string> zune_limit_label: "Zune JPEG Max Dimension";
+    in-out property <string> mem_fraction_label: "Memory Limit Fraction";
+    in-out property <string> multi_instance_label: "Allow Multiple Instances (Max 5)";
+    in-out property <string> restart_notice: "Changes to Tile Size take effect after restart.";
+    in-out property <string> save_button: "Save Settings";
+    in-out property <string> cancel_button: "Cancel";
+    in-out property <string> workshop_toggle: "Image Workshop";
+    in-out property <string> manga_mode_on: "Manga Mode (ON)";
+    in-out property <string> manga_mode_off: "Manga Mode (OFF)";
+
+    in-out property <string> exif_filter_on: "EXIF Filter (ON)";
+    in-out property <string> exif_filter_off: "EXIF Filter (OFF)";
+    in-out property <string> compare_mode_on: "Compare Mode (ON)";
+    in-out property <string> compare_mode_off: "Compare Mode (OFF)";
+    in-out property <string> split_horizontal: "Split Screen: Horizontal";
+    in-out property <string> split_vertical: "Split Screen: Vertical";
+    in-out property <string> compare_swipe: "Swipe Compare";
+    in-out property <string> switch_lang: "Switch Language(English)";
+
+    // Gallery Drawer
+    in-out property <string> gallery_drawer_title: "Gallery";
+
+    // Multi-instance Warning Dialog
+    in-out property <string> multi_instance_warning_title: "⚠️ Warning: Multi-Instance Risk";
+    in-out property <string> multi_instance_warning_msg: "Multiple instances will multiply GPU memory usage.";
+    in-out property <string> multi_instance_warning_confirm: "I understand the risk, proceed";
+
+    // EXIF Filter Drawer
+    in-out property <string> exif_filter_title: "EXIF Filter";
+    in-out property <string> exif_camera_model: "Camera Model:";
+    in-out property <string> exif_camera_placeholder: "e.g. SONY, Canon";
+    in-out property <string> exif_focal_length: "Focal Length Range (mm):";
+    in-out property <string> exif_aperture: "Aperture Range (F):";
+    in-out property <string> exif_iso: "ISO Range:";
+    in-out property <string> exif_min_placeholder: "Min";
+    in-out property <string> exif_max_placeholder: "Max";
+    in-out property <string> exif_apply: "Apply";
+    in-out property <string> exif_reset: "Reset";
+
+    // Password Dialog
+    in-out property <string> password_required_title: "Password Required";
+    in-out property <string> password_archive_prefix: "Archive: ";
+    in-out property <string> password_input_placeholder: "Enter password";
+    in-out property <string> confirm: "Confirm";
+    in-out property <string> cancel: "Cancel";
+
+    // Workshop UI
+    in-out property <string> workshop_batch_convert: "Batch Format Conversion";
+    in-out property <string> to_jpg: "to JPG";
+    in-out property <string> to_png: "to PNG";
+    in-out property <string> to_webp: "to WebP";
+    in-out property <string> workshop_image_stitch: "Image Stitching Settings";
+    in-out property <string> vertical_stitch: "Vertical Stitch";
+    in-out property <string> horizontal_stitch: "Horizontal Stitch";
+}
+
+component IconButton inherits Rectangle {
+    in-out property <string> d; 
+    in-out property <bool> active: false;
+    in-out property <brush> hover_color: rgba(255, 255, 255, 0.1);
+    in-out property <brush> active_color: #3498db;
+    in-out property <bool> is_danger: false;
+    in-out property <length> icon_size: 16px;
+    in-out property <length> stroke_width: 1.5px;
+    callback clicked;
+
+    height: 48px;
+    width: 32px;
+    background: transparent;
+
+    visual_rect := Rectangle {
+        y: (parent.height - self.height) / 2;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        background: touch.has-hover ? (is_danger ? #e74c3c : hover_color) : (active ? active_color : transparent);
+        
+        animate background { duration: 150ms; }
+
+        Path {
+            width: root.icon_size;
+            height: root.icon_size;
+            commands: root.d;
+            stroke: (touch.has-hover && is_danger) ? #fff : (active ? #fff : #eee);
+            stroke-width: root.stroke_width;
+            fill: transparent;
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+component MenuItem inherits Rectangle {
+    in-out property <string> text;
+    in-out property <string> icon;
+    in-out property <bool> is_danger: false;
+    callback clicked;
+
+    height: 32px;
+    preferred-width: layout.preferred-width;
+    background: touch.has-hover ? rgba(255, 255, 255, 0.08) : transparent;
+    border-radius: 4px;
+
+    layout := HorizontalLayout {
+        padding-left: 10px; padding-right: 10px; spacing: 10px;
+        Text { text: icon; font-size: 14px; vertical-alignment: center; }
+        Text { text: root.text; color: is_danger ? #e74c3c : #eee; font-size: 13px; vertical-alignment: center; horizontal-alignment: left; }
+    }
+
+    touch := TouchArea { clicked => { root.clicked(); } }
+}
+
+export component MainWindow inherits Window {
+    default-font-family: "Microsoft YaHei";
+    title: "PicaView Native";
+    icon: @image-url("../assets/icons/icon.png");
+    background: transparent;
+    no-frame: true;
+    preferred-width: 1280px;
+    preferred-height: 800px;
+
+    out property <float> viewport_width: root.width / 1px;
+    out property <float> viewport_height: root.height / 1px;
+    property <length> last_mouse_x;
+    property <length> last_mouse_y;
+    out property <length> mouse_x;
+    out property <length> mouse_y;
+
+    in-out property <string> current_image_path;
+    in-out property <image> current_image;
+    in-out property <image> wgpu_image;
+    in-out property <bool> toolbar_pinned: true;
+    in-out property <bool> toolbar_visible: true;
+    in-out property <bool> gallery_visible: false;
+    in-out property <bool> grid_gallery_visible: false;
+    in-out property <length> grid_item_width: 140px;
+    in-out property <[Thumbnail]> thumbnails;
+    in-out property <[Thumbnail]> all_thumbnails;
+    in-out property <string> status_text: L10n.status_ready;
+    in-out property <string> asset_search_text: "";
+    in-out property <bool> slideshow_playing: false;
+    in-out property <int> slideshow_interval: 3;
+    in-out property <bool> is_maximized: false;
+    in-out property <bool> context_menu_visible: false;
+    in-out property <bool> manga_hud_visible: false;
+    in-out property <bool> manga_mode_active: false;
+    in-out property <bool> workshop_visible: false;
+    in-out property <bool> settings_visible: false;
+    in-out property <string> settings_tile_size: "512";
+    in-out property <string> settings_max_cache_mb: "512";
+    in-out property <string> settings_hud_delay_ms: "800";
+    in-out property <string> settings_fallback_size: "2048";
+    in-out property <string> settings_zune_limit: "30000";
+    in-out property <bool> password_modal_visible: false;
+    in-out property <string> password_archive_path: "";
+    in-out property <string> settings_mem_fraction: "0.125";
+    in-out property <bool> settings_multi_instance: false;
+    in-out property <bool> multi_instance_warning_visible: false;
+    in-out property <length> context_menu_x;
+    in-out property <length> context_menu_y;
+    in-out property <int> active_thumbnail_index: -1;
+    changed active_thumbnail_index => {
+        gallery_flickable.viewport-x = active_thumbnail_index >= 0 ? -active_thumbnail_index * 112px : 0px;
+    }
+    in-out property <bool> scroll_mode_zoom: true;
+    in-out property <bool> long_image_mode_active: false;
+    in-out property <float> long_image_scroll_progress: 0.0;
+    in-out property <float> long_image_width_percent: 1.0;
+
+    in-out property <bool> exif_filter_visible: false;
+    in-out property <image> wgpu_image_compare;
+    in-out property <image> current_image_compare;
+    in-out property <bool> compare_mode_active: false;
+    in-out property <bool> compare_vertical: false;
+    in-out property <bool> compare_swipe: false;
+    in-out property <float> compare_swipe_ratio: 0.5;
+    in-out property <bool> is_swiping: false;
+    
+    in-out property <bool> viewport_locked: false;
+    in-out property <bool> exif_hud_visible: false;
+    in-out property <string> exif_hud_text: "";
+
+    callback save_settings(string, string, string, string, string, string, bool);
+    callback request_toggle_compare_mode();
+    callback request_toggle_compare_orientation();
+    callback request_compare_with_thumbnail(int);
+    callback request_toggle_settings();
+    callback thumbnail_clicked(int);
+    callback long_image_scrolled_to(int);
+    callback mouse_move(length, length);
+    callback request_next();
+    callback request_prev();
+    callback request_open(string);
+    callback request_close();
+    callback request_minimize();
+    callback request_toggle_maximize();
+    callback request_drag(length, length);
+    callback request_window_drag(bool);
+    callback request_pan(length, length);
+    callback request_toggle_auto_scroll();
+    callback request_adjust_auto_scroll_speed(float);
+    callback request_inertia(length, length);
+    callback slideshow_tick();
+    callback request_toggle_slideshow();
+    callback request_rotate(int);
+    callback request_flip(string);
+    callback request_reset_transform();
+    callback request_zoom(float, length, length, bool, bool);
+    callback request_toggle_scroll_mode();
+    callback request_toggle_long_image_mode();
+    callback request_scroll_to_percent(float);
+    callback request_adjust_width_percent(float);
+    callback request_scroll_navigate(float);
+    callback request_reveal_in_explorer();
+    callback request_copy_to_clipboard();
+    callback request_copy_file_to_clipboard();
+    callback request_copy_path_to_clipboard();
+    callback request_save_as();
+    callback request_open_in_external_editor();
+    callback request_set_wallpaper();
+    callback request_delete();
+    callback request_switch_language();
+    callback request_update_shell();
+    callback request_toggle_manga_mode();
+    callback request_workshop_batch_convert(string);
+    callback request_workshop_stitch(string, int, brush);
+    callback request_asset_search(string);
+    callback request_asset_filter(string);
+    callback request_asset_toggle_selection(int);
+    callback request_asset_select_all(bool);
+    callback files_dropped(string);
+    callback request_shortcut(string, bool) -> bool;
+    callback request_exif_filter(string, string, string, string, string, string, string);
+    callback request_toggle_viewport_lock();
+    callback request_toggle_exif_hud();
+    callback submit_password(string, string);
+
+    Rectangle { width: 100%; height: 100%; background: #1C1C1C; }
+    Image {
+        width: 100%; height: 100%;
+        source: @image-url("checkerboard.svg");
+        image-fit: cover;
+    }
+
+    // DropArea moved to end of MainWindow
+
+    // --- High Performance WGPU / Fallback Rendering Area ---
+    if (!root.compare_mode_active) : Rectangle {
+        width: 100%; height: 100%;
+        
+        Image {
+            source: root.wgpu_image;
+            width: parent.width;
+            height: parent.height;
+            image-fit: fill; 
+            visible: root.wgpu_image.width > 0;
+        }
+
+        if (current_image_path != "" && root.wgpu_image.width == 0) : Image {
+            source: root.current_image;
+            width: 100%; height: 100%;
+            image-fit: contain;
+        }
+    }
+
+    if (root.compare_mode_active && !root.compare_vertical && !root.compare_swipe) : HorizontalLayout {
+        width: 100%; height: 100%;
+        spacing: 2px;
+        
+        // Left Viewport (Current Image)
+        Rectangle {
+            width: 50%;
+            height: 100%;
+            background: #0d0d0f;
+            
+            Image {
+                source: root.wgpu_image;
+                width: parent.width;
+                height: parent.height;
+                image-fit: fill;
+                visible: root.wgpu_image.width > 0;
+            }
+            
+            if (current_image_path != "" && root.wgpu_image.width == 0) : Image {
+                source: root.current_image;
+                width: 100%; height: 100%;
+                image-fit: contain;
+            }
+        }
+        
+        // Right Viewport (Compare Image)
+        Rectangle {
+            width: 50%;
+            height: 100%;
+            background: #0d0d0f;
+            
+            Image {
+                source: root.wgpu_image_compare;
+                width: parent.width;
+                height: parent.height;
+                image-fit: fill;
+                visible: root.wgpu_image_compare.width > 0;
+            }
+            
+            if (root.wgpu_image_compare.width == 0) : Image {
+                source: root.current_image_compare;
+                width: 100%; height: 100%;
+                image-fit: contain;
+            }
+        }
+    }
+
+    if (root.compare_mode_active && root.compare_vertical && !root.compare_swipe) : VerticalLayout {
+        width: 100%; height: 100%;
+        spacing: 2px;
+        
+        // Top Viewport (Current Image)
+        Rectangle {
+            width: 100%;
+            height: 50%;
+            background: #0d0d0f;
+            
+            Image {
+                source: root.wgpu_image;
+                width: parent.width;
+                height: parent.height;
+                image-fit: fill;
+                visible: root.wgpu_image.width > 0;
+            }
+            
+            if (current_image_path != "" && root.wgpu_image.width == 0) : Image {
+                source: root.current_image;
+                width: 100%; height: 100%;
+                image-fit: contain;
+            }
+        }
+        
+        // Bottom Viewport (Compare Image)
+        Rectangle {
+            width: 100%;
+            height: 50%;
+            background: #0d0d0f;
+            
+            Image {
+                source: root.wgpu_image_compare;
+                width: parent.width;
+                height: parent.height;
+                image-fit: fill;
+                visible: root.wgpu_image_compare.width > 0;
+            }
+            
+            if (root.wgpu_image_compare.width == 0) : Image {
+                source: root.current_image_compare;
+                width: 100%; height: 100%;
+                image-fit: contain;
+            }
+        }
+    }
+
+    if (root.compare_mode_active && root.compare_swipe) : swipe_container := Rectangle {
+        width: 100%; height: 100%;
+        
+        // Bottom layer: Current Image
+        Image {
+            source: root.wgpu_image;
+            width: parent.width;
+            height: parent.height;
+            image-fit: fill;
+            visible: root.wgpu_image.width > 0;
+        }
+        if (current_image_path != "" && root.wgpu_image.width == 0) : Image {
+            source: root.current_image;
+            width: 100%; height: 100%;
+            image-fit: contain;
+        }
+
+        // Top layer: Compare Image, clipped
+        Rectangle {
+            x: 0; y: 0;
+            width: parent.width * root.compare_swipe_ratio;
+            height: parent.height;
+            clip: true;
+            
+            Image {
+                x: 0; y: 0;
+                source: root.wgpu_image_compare;
+                width: swipe_container.width;
+                height: swipe_container.height;
+                image-fit: fill;
+                visible: root.wgpu_image_compare.width > 0;
+            }
+            if (root.wgpu_image_compare.width == 0) : Image {
+                x: 0; y: 0;
+                source: root.current_image_compare;
+                width: swipe_container.width;
+                height: swipe_container.height;
+                image-fit: contain;
+            }
+        }
+        
+        // Slider Handle
+        Rectangle {
+            x: (parent.width * root.compare_swipe_ratio) - 20px;
+            width: 40px;
+            height: parent.height;
+            background: transparent;
+
+            Rectangle {
+                x: 19px;
+                width: 2px;
+                height: 100%;
+                background: #fff;
+            }
+            Rectangle {
+                width: 24px;
+                height: 48px;
+                y: (parent.height - self.height) / 2;
+                x: 8px;
+                border-radius: 4px;
+                background: #fff;
+                drop-shadow-color: #0008;
+                drop-shadow-blur: 4px;
+                
+                Text {
+                    text: "⇹";
+                    color: #000;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    width: 100%; height: 100%;
+                    font-size: 16px;
+                }
+            }
+        }
+    }
+
+    // --- Global Interaction Layer (Moved UP to not block UI) ---
+    i_touch := TouchArea {
+        width: 100%; height: 100%;
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down) {
+                root.last_mouse_x = self.mouse-x;
+                root.last_mouse_y = self.mouse-y;
+                if (root.compare_mode_active && root.compare_swipe && Math.abs(self.mouse-x - root.width * root.compare_swipe_ratio) < 40px) {
+                    root.is_swiping = true;
+                } else {
+                    root.is_swiping = false;
+                }
+                if (event.button == PointerEventButton.left && !root.is_swiping) {
+                    root.request_window_drag(event.modifiers.control);
+                }
+            }
+            if (event.kind == PointerEventKind.move) {
+                root.mouse_x = self.mouse-x;
+                root.mouse_y = self.mouse-y;
+                root.mouse_move(self.mouse-x, self.mouse-y);
+                if (!toolbar_pinned) {
+                    if (self.mouse-y < 100px) { root.toolbar_visible = true; }
+                    else if (self.mouse-y > 150px) { root.toolbar_visible = false; }
+                }
+                if (self.pressed) {
+                    if (root.is_swiping) {
+                        root.compare_swipe_ratio = Math.max(0.0, Math.min(1.0, self.mouse-x / root.width));
+                        return;
+                    }
+                    let dx = self.mouse-x - root.last_mouse_x;
+                    let dy = self.mouse-y - root.last_mouse_y;
+                    if (current_image_path != "") {
+                        root.request_pan(dx, dy);
+                    } else {
+                        root.request_drag(dx, dy);
+                    }
+                    root.last_mouse_x = self.mouse-x;
+                    root.last_mouse_y = self.mouse-y;
+                }
+            }
+            if (event.kind == PointerEventKind.up) {
+                root.is_swiping = false;
+            }
+            if (event.kind == PointerEventKind.up && self.pressed && current_image_path != "") {
+                root.request_inertia(self.mouse-x - self.pressed-x, self.mouse-y - self.pressed-y);
+            }
+            if (event.button == PointerEventButton.right && event.kind == PointerEventKind.down) {
+                root.context_menu_x = self.mouse-x;
+                root.context_menu_y = self.mouse-y;
+                root.context_menu_visible = true;
+            }
+        }
+        clicked => {
+            root.context_menu_visible = false;
+            focus_scope.focus();
+        }
+        scroll-event(event) => {
+            if (root.long_image_mode_active) {
+                root.request_zoom(event.delta-y / 1px, self.mouse-x, self.mouse-y, event.modifiers.control, event.modifiers.shift);
+            } else if (root.scroll_mode_zoom) {
+                root.request_zoom(event.delta-y / 1px, self.mouse-x, self.mouse-y, event.modifiers.control, event.modifiers.shift);
+            } else {
+                root.request_scroll_navigate(event.delta-y / 1px);
+            }
+            return accept;
+        }
+    }
+
+    // --- Status Overlay ---
+    Rectangle {
+        x: 20px; y: 72px;
+        width: status_label.width + 32px; height: 32px;
+        background: rgba(0, 0, 0, 0.85); border-radius: 6px;
+        border-width: 1px; border-color: rgba(255, 255, 255, 0.08);
+        visible: status_text != "";
+        status_label := Text {
+            text: root.status_text; color: #fff; font-size: 12px;
+            vertical-alignment: center; horizontal-alignment: center;
+        }
+    }
+
+
+
+    // --- Gallery ---
+    Rectangle {
+        y: parent.height - (gallery_visible ? 160px : 0px);
+        width: 100%; height: 160px; background: rgba(12, 12, 12, 0.98);
+        Rectangle { y: 0; width: 100%; height: 1px; background: rgba(255, 255, 255, 0.08); }
+        animate y { duration: 300ms; easing: cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        gallery_flickable := Flickable {
+            viewport-width: thumbnails.length * 112px + root.width - 112px;
+            viewport-x: active_thumbnail_index >= 0 ? -active_thumbnail_index * 112px : 0px;
+            
+            animate viewport-x { duration: 250ms; easing: ease-out; }
+
+            HorizontalLayout {
+                padding-left: (root.width - 120px) / 2;
+                padding-right: (root.width - 120px) / 2;
+                spacing: 12px; 
+                alignment: start;
+                
+                for thumb[i] in thumbnails : Rectangle {
+                    width: thumb.is_active ? 120px : 100px; 
+                    height: thumb.is_active ? 120px : 100px; 
+                    y: (parent.height - self.height) / 2;
+                    background: rgba(255, 255, 255, 0.02); border-radius: 8px;
+                    border-width: thumb.is_active ? 3px : 1px;
+                    border-color: thumb.is_active ? #3498db : rgba(255, 255, 255, 0.05);
+                    
+                    animate width, height, border-width { duration: 200ms; easing: ease-in-out; }
+
+                    Image { 
+                        source: thumb.image; 
+                        width: 90%; height: 90%; 
+                        image-fit: contain; 
+                        opacity: thumb.is_active ? 1.0 : 0.7;
+                        animate opacity { duration: 200ms; }
+                    }
+                    TouchArea { 
+                        clicked => { 
+                            root.thumbnail_clicked(i); 
+                        }
+                        pointer-event(event) => {
+                            if (event.button == PointerEventButton.right && event.kind == PointerEventKind.down) {
+                                root.request_compare_with_thumbnail(i);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (current_image_path == "") : Rectangle {
+        width: 100%; height: 100%; background: transparent;
+        VerticalLayout {
+            alignment: center; spacing: 12px;
+            Text { text: L10n.drag_hint; color: #666; font-size: 22px; horizontal-alignment: center; font-weight: 500; }
+            Text { text: L10n.supported_formats; color: #444; font-size: 15px; horizontal-alignment: center; }
+        }
+    }
+
+    forward-focus: focus_scope;
+    focus_scope := FocusScope {
+        key-pressed(event) => {
+            if (event.text == "," && event.modifiers.control) { root.request_toggle_settings(); return accept; }
+            if (root.request_shortcut(event.text, event.modifiers.control)) { return accept; }
+            if (event.text == Key.LeftArrow) { root.request_prev(); return accept; }
+            if (event.text == Key.RightArrow) { root.request_next(); return accept; }
+            if (event.text == Key.UpArrow) { 
+                if (root.long_image_mode_active) { root.request_adjust_auto_scroll_speed(-50.0); }
+                root.request_pan(0px, 150px); 
+                return accept; 
+            }
+            if (event.text == Key.DownArrow) { 
+                if (root.long_image_mode_active) { root.request_adjust_auto_scroll_speed(50.0); }
+                root.request_pan(0px, -150px); 
+                return accept; 
+            }
+            if (event.text == Key.PageUp) { root.request_pan(0px, root.height * 0.8); return accept; }
+            if (event.text == Key.PageDown) { root.request_pan(0px, -root.height * 0.8); return accept; }
+            if (event.text == "o" && event.modifiers.control) { root.request_open(""); return accept; }
+            if (event.text == Key.Escape) {
+                if (root.grid_gallery_visible) {
+                    root.grid_gallery_visible = false;
+                    return accept;
+                }
+                root.request_close();
+                return accept;
+            }
+            if (event.text == "l" || event.text == "L") { root.request_rotate(-90); return accept; }
+            if (event.text == "r" || event.text == "R") { root.request_rotate(90); return accept; }
+            if (event.text == "0") { root.request_reset_transform(); return accept; }
+            if (event.text == " ") { root.request_toggle_slideshow(); return accept; }
+            if (event.text == "g" || event.text == "G") { root.grid_gallery_visible = !root.grid_gallery_visible; return accept; }
+            if (event.text == "t" || event.text == "T") { root.gallery_visible = !root.gallery_visible; return accept; }
+            if (event.text == "v" || event.text == "V") { root.request_toggle_viewport_lock(); return accept; }
+            if (event.text == "i" || event.text == "I") { root.request_toggle_exif_hud(); return accept; }
+            if ((event.text == "c" || event.text == "C" || event.text == "\u{0003}") && event.modifiers.control) {
+                if (event.modifiers.shift) { root.request_copy_to_clipboard(); } else { root.request_copy_file_to_clipboard(); }
+                return accept;
+            }
+            if ((event.text == "s" || event.text == "S" || event.text == "\u{0013}") && event.modifiers.control) { root.request_save_as(); return accept; }
+            if (event.text == Key.Delete) { root.request_delete(); return accept; }
+            if (event.text == "f" || event.text == "F" || event.text == Key.F11) { root.request_toggle_maximize(); return accept; }
+            if (event.text == "=" || event.text == "+") { root.request_zoom(0.1, root.width / 2, root.height / 2, true, false); return accept; }
+            if (event.text == "-") { root.request_zoom(-0.1, root.width / 2, root.height / 2, true, false); return accept; }
+            if (event.text == "M" || event.text == "m") { root.request_toggle_auto_scroll(); return accept; }
+            return reject;
+        }
+    }
+
+    // --- EXIF HUD ---
+    Rectangle {
+        x: 20px;
+        y: 20px;
+        width: exif_text.width + 40px; 
+        height: exif_text.height + 30px;
+        background: rgba(20, 20, 20, 0.7);
+        border-radius: 8px;
+        drop-shadow-blur: 10px;
+        drop-shadow-color: rgba(0, 0, 0, 0.4);
+        opacity: root.exif_hud_visible ? 1.0 : 0.0;
+        
+        animate opacity { duration: 150ms; easing: ease-in-out; }
+        
+        exif_text := Text {
+            x: 20px;
+            y: 15px;
+            text: root.exif_hud_text;
+            color: #FFF;
+            font-size: 14px;
+            font-weight: 500;
+        }
+    }
+
+    // --- Manga mode HUD ---
+    if (manga_hud_visible) : Rectangle {
+        width: 100%; height: 100%; background: transparent;
+        
+        Rectangle {
+            width: 280px; height: 70px;
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 12px;
+            border-width: 1px; border-color: rgba(255, 255, 255, 0.15);
+            drop-shadow-blur: 16px;
+            drop-shadow-color: rgba(0, 0, 0, 0.6);
+            
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: root.status_text;
+                    color: #fff; font-size: 16px; font-weight: 600;
+                    horizontal-alignment: center;
+                }
+            }
+            animate opacity { duration: 200ms; }
+        }
+    }
+
+    // --- Grid Gallery Overlay ---
+    if (grid_gallery_visible) : Rectangle {
+        x: 0; y: 0; width: 100%; height: 100%;
+        background: #0a0a0a; // Harmony dark theme
+        
+        VerticalLayout {
+            padding-left: 24px; padding-right: 24px; padding-top: 80px; padding-bottom: 24px;
+            spacing: 16px;
+            
+            HorizontalLayout {
+                Text {
+                    text: L10n.gallery_drawer_title + " (" + root.thumbnails.length + ")";
+                    font-size: 20px; font-weight: 800; color: #ffffff;
+                    vertical-alignment: center;
+                }
+                Rectangle { horizontal-stretch: 1; }
+                
+                // 关闭大画廊按钮
+                IconButton { 
+                    d: "M2 2l8 8 M10 2l-8 8"; 
+                    is_danger: true; 
+                    clicked => { root.grid_gallery_visible = false; } 
+                }
+            }
+            
+            Rectangle { height: 1px; background: rgba(255, 255, 255, 0.08); }
+            
+            // 自适应的动态网格滚动视图
+            gallery_scroll := ScrollView {
+                property <int> cols: Math.max(1, Math.floor((root.width - 48px) / (root.grid_item_width + 16px)));
+
+                viewport-height: (Math.floor(root.thumbnails.length / self.cols) + 1) * (root.grid_item_width + 46px) + 32px;
+                
+                // 画廊的主 Flickable 区域
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    background: transparent;
+                    
+                    // 底层滑轮缩放拦截区（置于底部，支持 Ctrl+滚轮 缩放，不干扰上层卡片点击）
+                    TouchArea {
+                        width: 100%;
+                        height: 100%;
+                        scroll-event(event) => {
+                            if (event.modifiers.control) {
+                                // 限制宽度缩放区间为 80px - 300px
+                                root.grid_item_width = Math.clamp(root.grid_item_width + event.delta-y * 0.1, 80px, 300px);
+                                return accept;
+                            }
+                            return reject;
+                        }
+                    }
+                    
+                    // 上层卡片网格
+                    for thumb[i] in root.thumbnails : Rectangle {
+                        property <int> r_idx: Math.floor(i / gallery_scroll.cols);
+                        property <int> c_idx: i - r_idx * gallery_scroll.cols;
+                        
+                        x: c_idx * (root.grid_item_width + 16px) + 8px;
+                        y: r_idx * (root.grid_item_width + 46px) + 8px;
+                        width: root.grid_item_width;
+                        height: root.grid_item_width + 30px;
+                        background: thumb.is_active ? rgba(52, 152, 219, 0.1) : (t_item.has-hover ? rgba(255, 255, 255, 0.04) : rgba(255, 255, 255, 0.02));
+                        border-radius: 8px;
+                        border-width: thumb.is_active ? 2px : 1px;
+                        border-color: thumb.is_active ? #3498db : (t_item.has-hover ? rgba(255, 255, 255, 0.15) : rgba(255, 255, 255, 0.05));
+                        
+                        animate border-color, background { duration: 150ms; }
+                        
+                        VerticalLayout {
+                            padding: 8px; spacing: 8px;
+                            Rectangle {
+                                vertical-stretch: 1;
+                                background: #121212;
+                                border-radius: 6px;
+                                clip: true;
+                                Image {
+                                    source: thumb.image;
+                                    width: 100%; height: 100%;
+                                    image-fit: contain;
+                                }
+                            }
+                            Text {
+                                text: thumb.label;
+                                font-size: 11px;
+                                color: thumb.is_active ? #3498db : #ccc;
+                                horizontal-alignment: center;
+                                overflow: elide;
+                                height: 16px;
+                            }
+                        }
+                        
+                        t_item := TouchArea {
+                            clicked => {
+                                root.thumbnail_clicked(i);
+                                root.grid_gallery_visible = false; // 点击之后回到大图模式并关闭大画廊
+                            }
+                            pointer-event(event) => {
+                                if (event.button == PointerEventButton.right && event.kind == PointerEventKind.down) {
+                                    root.request_compare_with_thumbnail(i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    // --- Image Workshop Overlay ---
+    if (workshop_visible) : Rectangle {
+        x: 0; y: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        
+        Rectangle {
+            width: 600px; height: 500px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border-width: 1px; border-color: rgba(255, 255, 255, 0.1);
+            drop-shadow-blur: 30px; drop-shadow-color: rgba(0, 0, 0, 0.8);
+
+            VerticalLayout {
+                padding: 24px; spacing: 20px;
+                HorizontalLayout {
+                    Text { text: L10n.workshop_toggle; font-size: 22px; font-weight: 800; color: #fff; }
+                    Rectangle { horizontal-stretch: 1; }
+                    IconButton { 
+                        d: "M2 2l8 8 M10 2l-8 8"; 
+                        is_danger: true; 
+                        clicked => { root.workshop_visible = false; } 
+                    }
+                }
+
+                Rectangle { height: 1px; background: rgba(255, 255, 255, 0.08); }
+
+                ScrollView {
+                    VerticalLayout {
+                        spacing: 24px;
+                        
+                        // Batch Convert Section
+                        VerticalLayout {
+                            spacing: 12px;
+                            Text { text: L10n.workshop_batch_convert; font-size: 16px; font-weight: 600; color: #3498db; }
+                            HorizontalLayout {
+                                spacing: 10px;
+                                Button { text: L10n.to_jpg; clicked => { root.request_workshop_batch_convert("jpg"); } }
+                                Button { text: L10n.to_png; clicked => { root.request_workshop_batch_convert("png"); } }
+                                Button { text: L10n.to_webp; clicked => { root.request_workshop_batch_convert("webp"); } }
+                            }
+                        }
+
+                        // Stitch Section
+                        VerticalLayout {
+                            spacing: 12px;
+                            Text { text: L10n.workshop_image_stitch; font-size: 16px; font-weight: 600; color: #3498db; }
+                            HorizontalLayout {
+                                spacing: 10px;
+                                alignment: start;
+                                Button { text: L10n.vertical_stitch; clicked => { root.request_workshop_stitch("v", 0, #000); } }
+                                Button { text: L10n.horizontal_stitch; clicked => { root.request_workshop_stitch("h", 0, #000); } }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Floating Toolbar ---
+    HorizontalLayout {
+        y: toolbar_visible ? 12px : -60px;
+        width: 100%;
+        height: 48px;
+        alignment: center;
+        animate y { duration: 150ms; easing: ease-in-out; }
+
+        Rectangle {
+            background: #1a1a1a;
+            border-radius: 24px;
+            border-width: 1px;
+            border-color: rgba(255, 255, 255, 0.1);
+            drop-shadow-blur: 10px;
+            drop-shadow-color: rgba(0, 0, 0, 0.3);
+
+            HorizontalLayout {
+                padding-left: 12px; padding-right: 12px;
+                spacing: 8px;
+                alignment: center;
+
+                // Group 1: File
+                HorizontalLayout {
+                    IconButton { d: "M2 3h4l2 2h4a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M7 7v4M5 9h4"; clicked => { root.request_open(""); } }
+                    IconButton { d: "M2 3h4l2 2h4a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"; clicked => { root.request_open("folder"); } }
+                }
+
+                Rectangle { width: 8px; height: 48px; Rectangle { y: 16px; width: 1px; height: 16px; background: rgba(255,255,255,0.1); } }
+
+                // Group 2: Transform
+                HorizontalLayout {
+                    IconButton { d: "M4 9V6a2 2 0 0 1 2-2h3 M15 4h3a2 2 0 0 1 2 2v3 M20 15v3a2 2 0 0 1-2 2h-3 M9 20H6a2 2 0 0 1-2-2v-3 M9 9h6v6H9z"; clicked => { root.request_reset_transform(); } }
+                    IconButton { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5"; clicked => { root.request_rotate(-90); } }
+                    IconButton { d: "M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8 M21 3v5h-5"; clicked => { root.request_rotate(90); } }
+                    IconButton { d: "M12 2v20 M12 6L4 12l8 6V6 M12 6l8 6-8 6V6"; clicked => { root.request_flip("h"); } }
+                    IconButton { d: "M2 12h20 M6 12l6-8 6 8H6 M6 12l6 8 6-8H6"; clicked => { root.request_flip("v"); } }
+                }
+
+                Rectangle { width: 8px; height: 48px; Rectangle { y: 16px; width: 1px; height: 16px; background: rgba(255,255,255,0.1); } }
+
+                // Group 3: Nav
+                HorizontalLayout {
+                    IconButton { d: "M15 18l-6-6 6-6"; clicked => { root.request_prev(); } }
+                    IconButton { d: "M9 18l6-6-6-6"; clicked => { root.request_next(); } }
+                    // 资产网格浏览器 (全屏大画廊)
+                    IconButton { 
+                        d: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"; 
+                        active: grid_gallery_visible; 
+                        clicked => { root.grid_gallery_visible = !root.grid_gallery_visible; } 
+                    }
+                    // 底部缩略图预览栏 (横向胶卷拟物图标)
+                    IconButton { 
+                        d: "M2 6h20v12H2z M6 6v12 M12 6v12 M18 6v12"; 
+                        active: gallery_visible; 
+                        clicked => { root.gallery_visible = !root.gallery_visible; } 
+                    }
+                    // 滚轮行为切换按钮 (放大镜/垂直箭头)
+                    IconButton {
+                        d: root.scroll_mode_zoom ? "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" : "M7 8l5-5 5 5M7 16l5 5 5-5M12 3v18";
+                        active: !root.scroll_mode_zoom;
+                        clicked => { root.request_toggle_scroll_mode(); }
+                    }
+                }
+
+                Rectangle { width: 8px; height: 48px; Rectangle { y: 16px; width: 1px; height: 16px; background: rgba(255,255,255,0.1); } }
+
+                // Group 4: Slideshow
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: center;
+                    IconButton { d: slideshow_playing ? "M6 4h4v16H6zM14 4h4v16h-4z" : "M5 3l14 9-14 9z"; clicked => { root.request_toggle_slideshow(); } }
+                    Text { text: slideshow_interval + "s"; color: #888; font-size: 12px; vertical-alignment: center; }
+                }
+
+                Rectangle { width: 8px; height: 48px; Rectangle { y: 16px; width: 1px; height: 16px; background: rgba(255,255,255,0.1); } }
+
+                // Group 5: Window
+                HorizontalLayout {
+                    IconButton { d: "M3 11l2-2m6-7l1 1 M9 2L5 6M2 9l3-3m0 0l2 2 4-4-2-2-4 4"; active: toolbar_pinned; clicked => { root.toolbar_pinned = !root.toolbar_pinned; } }
+                    IconButton { d: "M2 10h8"; clicked => { root.request_minimize(); } }
+                    IconButton { 
+                        d: root.is_maximized ? "M3 5h6v6H3z M5 3h6v6H5z" : "M2 2h8v8H2z"; 
+                        clicked => { root.request_toggle_maximize(); } 
+                    }
+                    IconButton { d: "M2 2l8 8 M10 2l-8 8"; is_danger: true; clicked => { root.request_close(); } }
+                }
+            }
+        }
+    }
+
+
+    // --- Settings Drawer ---
+    if (settings_visible) : Rectangle {
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.45);
+
+        TouchArea {
+            clicked => { root.settings_visible = false; }
+        }
+
+        HorizontalLayout {
+            alignment: end;
+
+            Rectangle {
+                width: 320px;
+                height: 100%;
+                background: #1e1e24e6;
+                drop-shadow-blur: 16px;
+                drop-shadow-color: rgba(0, 0, 0, 0.5);
+
+                Rectangle {
+                    x: 0;
+                    width: 1px;
+                    height: 100%;
+                    background: rgba(255, 255, 255, 0.12);
+                }
+
+                TouchArea {
+                    clicked => {}
+                }
+
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
+
+                    HorizontalLayout {
+                        Text {
+                            text: L10n.settings_title;
+                            font-size: 20px;
+                            font-weight: 700;
+                            color: #ffffff;
+                            vertical-alignment: center;
+                        }
+                        Rectangle {}
+                        IconButton {
+                            d: "M2 2l8 8 M10 2l-8 8";
+                            clicked => { root.settings_visible = false; }
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: rgba(255, 255, 255, 0.08); }
+
+                    VerticalLayout {
+                        spacing: 14px;
+                        
+                        // GPU Tile Size
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text { text: L10n.tile_size_label; color: #888888; font-size: 12px; }
+                            tile_input := LineEdit {
+                                text: root.settings_tile_size;
+                            }
+                            Text { text: L10n.restart_notice; color: #ff4757; font-size: 10px; }
+                        }
+
+                        // Max Cache
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text { text: L10n.max_cache_label; color: #888888; font-size: 12px; }
+                            cache_input := LineEdit {
+                                text: root.settings_max_cache_mb;
+                            }
+                        }
+
+                        // HUD Delay
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text { text: L10n.hud_delay_label; color: #888888; font-size: 12px; }
+                            hud_input := LineEdit {
+                                text: root.settings_hud_delay_ms;
+                            }
+                        }
+
+                        // Fallback Size
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text { text: L10n.fallback_label; color: #888888; font-size: 12px; }
+                            fallback_input := LineEdit {
+                                text: root.settings_fallback_size;
+                            }
+                        }
+
+                        // Zune Limit
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text { text: L10n.zune_limit_label; color: #888888; font-size: 12px; }
+                            zune_input := LineEdit {
+                                text: root.settings_zune_limit;
+                            }
+                        }
+
+                        // Memory Limit Fraction
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text { text: L10n.mem_fraction_label; color: #888888; font-size: 12px; }
+                            mem_input := LineEdit {
+                                text: root.settings_mem_fraction;
+                            }
+                        }
+
+                        // Multi Instance Toggle
+                        Rectangle {
+                            height: 24px;
+                            HorizontalLayout {
+                                spacing: 8px;
+                                Rectangle {
+                                    width: 16px; height: 16px; border-radius: 4px; border-width: 1px; border-color: #888;
+                                    background: root.settings_multi_instance ? #4CAF50 : transparent;
+                                }
+                                Text { text: L10n.multi_instance_label; color: #fff; font-size: 12px; vertical-alignment: center; }
+                            }
+                            TouchArea {
+                                clicked => {
+                                    if (!root.settings_multi_instance) {
+                                        root.multi_instance_warning_visible = true;
+                                    } else {
+                                        root.settings_multi_instance = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle { height: 10px; }
+
+                    HorizontalLayout {
+                        spacing: 12px;
+                        height: 36px;
+                        
+                        Button {
+                            text: L10n.save_button;
+                            clicked => {
+                                root.settings_visible = false;
+                                root.save_settings(
+                                    tile_input.text,
+                                    cache_input.text,
+                                    hud_input.text,
+                                    fallback_input.text,
+                                    zune_input.text,
+                                    mem_input.text,
+                                    root.settings_multi_instance
+                                );
+                            }
+                        }
+                        
+                        Button {
+                            text: L10n.cancel_button;
+                            clicked => {
+                                root.settings_visible = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Multi-Instance Warning Dialog ---
+    if (multi_instance_warning_visible) : Rectangle {
+        width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+        TouchArea {} // Block interactions
+        Rectangle {
+            width: 420px; height: 210px; background: #222; border-radius: 8px;
+            drop-shadow-blur: 20px; drop-shadow-color: rgba(0,0,0,0.8);
+            VerticalLayout {
+                padding: 24px; spacing: 16px;
+                Text { text: L10n.multi_instance_warning_title; font-size: 18px; font-weight: 700; color: #ff4757; }
+                Text {
+                    text: L10n.multi_instance_warning_msg;
+                    wrap: word-wrap; color: #ccc; font-size: 14px;
+                }
+                Rectangle { height: 1px; }
+                HorizontalLayout {
+                    spacing: 16px; alignment: end;
+                    Button {
+                        text: L10n.cancel;
+                        clicked => { root.multi_instance_warning_visible = false; }
+                    }
+                    Button {
+                        text: L10n.multi_instance_warning_confirm;
+                        clicked => {
+                            root.settings_multi_instance = true;
+                            root.multi_instance_warning_visible = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- EXIF Filter Drawer ---
+    if (exif_filter_visible) : Rectangle {
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.45);
+
+        TouchArea {
+            clicked => { root.exif_filter_visible = false; }
+        }
+
+        HorizontalLayout {
+            alignment: end;
+
+            Rectangle {
+                width: 320px;
+                height: 100%;
+                background: #1e1e24e6;
+                drop-shadow-blur: 16px;
+                drop-shadow-color: rgba(0, 0, 0, 0.5);
+
+                Rectangle {
+                    x: 0;
+                    width: 1px;
+                    height: 100%;
+                    background: rgba(255, 255, 255, 0.12);
+                }
+
+                TouchArea {
+                    clicked => {}
+                }
+
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
+
+                    HorizontalLayout {
+                        Text {
+                            text: L10n.exif_filter_title;
+                            font-size: 20px;
+                            font-weight: 700;
+                            color: #ffffff;
+                            vertical-alignment: center;
+                        }
+                        Rectangle {}
+                        IconButton {
+                            d: "M2 2l8 8 M10 2l-8 8";
+                            clicked => { root.exif_filter_visible = false; }
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: rgba(255, 255, 255, 0.08); }
+
+                    ScrollView {
+                        VerticalLayout {
+                            spacing: 14px;
+                            
+                            // Camera Model
+                            VerticalLayout {
+                                spacing: 4px;
+                                Text { text: L10n.exif_camera_model; color: #888888; font-size: 12px; }
+                                camera_input := LineEdit {
+                                    placeholder-text: L10n.exif_camera_placeholder;
+                                }
+                            }
+
+                            // Focal Length Range
+                            VerticalLayout {
+                                spacing: 4px;
+                                Text { text: L10n.exif_focal_length; color: #888888; font-size: 12px; }
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    min_focal_input := LineEdit { placeholder-text: L10n.exif_min_placeholder; }
+                                    Text { text: "-"; color: #888; vertical-alignment: center; }
+                                    max_focal_input := LineEdit { placeholder-text: L10n.exif_max_placeholder; }
+                                }
+                            }
+
+                            // Aperture Range
+                            VerticalLayout {
+                                spacing: 4px;
+                                Text { text: L10n.exif_aperture; color: #888888; font-size: 12px; }
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    min_ap_input := LineEdit { placeholder-text: L10n.exif_min_placeholder; }
+                                    Text { text: "-"; color: #888; vertical-alignment: center; }
+                                    max_ap_input := LineEdit { placeholder-text: L10n.exif_max_placeholder; }
+                                }
+                            }
+
+                            // ISO Range
+                            VerticalLayout {
+                                spacing: 4px;
+                                Text { text: L10n.exif_iso; color: #888888; font-size: 12px; }
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    min_iso_input := LineEdit { placeholder-text: L10n.exif_min_placeholder; }
+                                    Text { text: "-"; color: #888; vertical-alignment: center; }
+                                    max_iso_input := LineEdit { placeholder-text: L10n.exif_max_placeholder; }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle { height: 10px; }
+
+                    HorizontalLayout {
+                        spacing: 12px;
+                        height: 36px;
+                        
+                        Button {
+                            text: L10n.exif_apply;
+                            clicked => {
+                                root.request_exif_filter(
+                                    min_focal_input.text,
+                                    max_focal_input.text,
+                                    min_ap_input.text,
+                                    max_ap_input.text,
+                                    min_iso_input.text,
+                                    max_iso_input.text,
+                                    camera_input.text
+                                );
+                            }
+                        }
+                        
+                        Button {
+                            text: L10n.exif_reset;
+                            clicked => {
+                                camera_input.text = "";
+                                min_focal_input.text = "";
+                                max_focal_input.text = "";
+                                min_ap_input.text = "";
+                                max_ap_input.text = "";
+                                min_iso_input.text = "";
+                                max_iso_input.text = "";
+                                root.request_exif_filter("", "", "", "", "", "", "");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    if (context_menu_visible) : Rectangle {
+        x: max(0px, context_menu_x + self.width > root.width ? root.width - self.width - 8px : context_menu_x);
+        y: max(0px, context_menu_y + self.height > root.height ? root.height - self.height - 8px : context_menu_y);
+        width: max(220px, menu_layout.preferred-width);
+        height: self.preferred-height;
+        background: #1a1a1a;
+        border-radius: 8px;
+        border-width: 1px;
+        border-color: rgba(255, 255, 255, 0.1);
+        drop-shadow-blur: 12px;
+        drop-shadow-color: rgba(0, 0, 0, 0.5);
+
+        menu_layout := VerticalLayout {
+            padding: 6px;
+            MenuItem { icon: "📂"; text: L10n.open_file + "..."; clicked => { root.context_menu_visible = false; root.request_open(""); } }
+            MenuItem { icon: "📁"; text: L10n.open_folder + "..."; clicked => { root.context_menu_visible = false; root.request_open("folder"); } }
+            Rectangle { height: 9px; Rectangle { y: 4px; height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); } }
+            MenuItem { icon: "🔗"; text: L10n.reveal_in_explorer; clicked => { root.context_menu_visible = false; root.request_reveal_in_explorer(); } }
+            MenuItem { icon: "📝"; text: L10n.open_external; clicked => { root.context_menu_visible = false; root.request_open_in_external_editor(); } }
+            MenuItem { icon: "🖼️"; text: L10n.copy_image; clicked => { root.context_menu_visible = false; root.request_copy_to_clipboard(); } }
+            MenuItem { icon: "📄"; text: L10n.copy_file; clicked => { root.context_menu_visible = false; root.request_copy_file_to_clipboard(); } }
+            MenuItem { icon: "📍"; text: L10n.copy_path; clicked => { root.context_menu_visible = false; root.request_copy_path_to_clipboard(); } }
+            MenuItem { icon: "💾"; text: L10n.save_as; clicked => { root.context_menu_visible = false; root.request_save_as(); } }
+            Rectangle { height: 9px; Rectangle { y: 4px; height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); } }
+            MenuItem { icon: "🖼️"; text: L10n.set_wallpaper; clicked => { root.context_menu_visible = false; root.request_set_wallpaper(); } }
+            Rectangle { height: 9px; Rectangle { y: 4px; height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); } }
+            MenuItem { icon: "🌐"; text: L10n.switch_lang; clicked => { root.context_menu_visible = false; root.request_switch_language(); } }
+            MenuItem { icon: "🛠️"; text: L10n.workshop_toggle; clicked => { root.context_menu_visible = false; root.workshop_visible = true; } }
+            MenuItem { icon: "⚙️"; text: L10n.settings_title; clicked => { root.context_menu_visible = false; root.request_toggle_settings(); } }
+            MenuItem { icon: "⚙️"; text: L10n.update_shell; clicked => { root.context_menu_visible = false; root.request_update_shell(); } }
+            MenuItem { icon: root.manga_mode_active ? "✅" : "📖"; text: root.manga_mode_active ? L10n.manga_mode_on : L10n.manga_mode_off; clicked => { root.context_menu_visible = false; root.request_toggle_manga_mode(); } }
+            MenuItem { icon: root.scroll_mode_zoom ? "🔍" : "↕️"; text: root.scroll_mode_zoom ? L10n.scroll_zoom_mode : L10n.scroll_navigate_mode; clicked => { root.context_menu_visible = false; root.request_toggle_scroll_mode(); } }
+            MenuItem { icon: root.long_image_mode_active ? "✅" : "↕️"; text: root.long_image_mode_active ? L10n.long_image_mode_on : L10n.long_image_mode_off; clicked => { root.context_menu_visible = false; root.request_toggle_long_image_mode(); } }
+            MenuItem { icon: root.exif_filter_visible ? "✅" : "🔍"; text: root.exif_filter_visible ? L10n.exif_filter_on : L10n.exif_filter_off; clicked => { root.context_menu_visible = false; root.exif_filter_visible = !root.exif_filter_visible; } }
+            MenuItem { icon: root.compare_mode_active ? "✅" : "🔀"; text: root.compare_mode_active ? L10n.compare_mode_on : L10n.compare_mode_off; clicked => { root.context_menu_visible = false; root.request_toggle_compare_mode(); } }
+            MenuItem { icon: root.compare_swipe ? "⇹" : (root.compare_vertical ? "↕️" : "↔️"); text: root.compare_swipe ? L10n.compare_swipe : (root.compare_vertical ? L10n.split_vertical : L10n.split_horizontal); clicked => { root.context_menu_visible = false; root.request_toggle_compare_orientation(); } }
+            Rectangle { height: 9px; Rectangle { y: 4px; height: 1px; width: 100%; background: rgba(255, 255, 255, 0.08); } }
+            MenuItem { icon: "🗑️"; text: L10n.delete_file; is_danger: true; clicked => { root.context_menu_visible = false; root.request_delete(); } }
+        }
+    }
+
+    // Right-side floating control panel for long image mode
+    if (root.long_image_mode_active && current_image_path != "") : Rectangle {
+        x: parent.width - 56px;
+        y: (parent.height - 300px) / 2;
+        width: 44px;
+        height: 300px;
+        background: rgba(18, 18, 18, 0.85);
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: rgba(255, 255, 255, 0.1);
+        drop-shadow-blur: 12px;
+        drop-shadow-color: rgba(0, 0, 0, 0.3);
+        
+        opacity: (bg_ta.has-hover || width_ta.has-hover || scroll_ta.has-hover) ? 1.0 : 0.15;
+        animate opacity { duration: 300ms; }
+        
+        bg_ta := TouchArea { width: 100%; height: 100%; }
+        
+        HorizontalLayout {
+            padding: 8px;
+            spacing: 8px;
+            
+            // 1. Width Control Track (Left)
+            Rectangle {
+                width: 10px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 5px;
+                
+                // Width Slider Thumb
+                Rectangle {
+                    x: 0;
+                    y: parent.height - self.height - ((root.long_image_width_percent - 0.2) / 2.3) * (parent.height - self.height);
+                    width: 10px;
+                    height: 10px;
+                    background: #3b82f6; // Blue thumb
+                    border-radius: 5px;
+                }
+                
+                width_ta := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    pointer-event(event) => {
+                        if (event.kind == PointerEventKind.down) {
+                            let ratio = 1.0 - (self.mouse-y / parent.height);
+                            let val = 0.2 + ratio * 2.3;
+                            root.long_image_width_percent = val.clamp(0.2, 2.5);
+                            root.request_adjust_width_percent(root.long_image_width_percent);
+                        }
+                    }
+                    moved => {
+                        let ratio = 1.0 - (self.mouse-y / parent.height);
+                        let val = 0.2 + ratio * 2.3;
+                        root.long_image_width_percent = val.clamp(0.2, 2.5);
+                        root.request_adjust_width_percent(root.long_image_width_percent);
+                    }
+                }
+            }
+            
+            // 2. Scroll Progress Track (Right)
+            Rectangle {
+                width: 10px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 5px;
+                
+                // Scrollbar Thumb
+                Rectangle {
+                    x: 0;
+                    y: root.long_image_scroll_progress * (parent.height - self.height);
+                    width: 10px;
+                    height: 30px;
+                    background: #a3a3a3; // Gray thumb
+                    border-radius: 5px;
+                }
+                
+                scroll_ta := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    pointer-event(event) => {
+                        if (event.kind == PointerEventKind.down) {
+                            let percent = self.mouse-y / parent.height;
+                            root.long_image_scroll_progress = percent.clamp(0.0, 1.0);
+                            root.request_scroll_to_percent(root.long_image_scroll_progress);
+                        }
+                    }
+                    moved => {
+                        let percent = self.mouse-y / parent.height;
+                        root.long_image_scroll_progress = percent.clamp(0.0, 1.0);
+                        root.request_scroll_to_percent(root.long_image_scroll_progress);
+                    }
+                }
+            }
+        }
+
+        if password_modal_visible: Rectangle {
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            TouchArea {} // consume clicks
+
+            Rectangle {
+                width: 400px;
+                height: 200px;
+                background: #252526;
+                border-radius: 8px;
+                drop-shadow-blur: 16px;
+                drop-shadow-color: rgba(0, 0, 0, 0.5);
+
+                VerticalBox {
+                    alignment: center;
+                    Text {
+                        text: L10n.password_required_title;
+                        font-size: 18px;
+                        color: white;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: L10n.password_archive_prefix + root.password_archive_path;
+                        font-size: 12px;
+                        color: #888;
+                        horizontal-alignment: center;
+                    }
+                    pass_input := LineEdit {
+                        placeholder-text: L10n.password_input_placeholder;
+                        input-type: password;
+                        accepted => {
+                            root.password_modal_visible = false;
+                            root.submit_password(root.password_archive_path, self.text);
+                            self.text = "";
+                        }
+                    }
+                    HorizontalBox {
+                        alignment: center;
+                        Button {
+                            text: L10n.cancel;
+                            clicked => {
+                                root.password_modal_visible = false;
+                                pass_input.text = "";
+                            }
+                        }
+                        Button {
+                            text: L10n.confirm;
+                            primary: true;
+                            clicked => {
+                                root.password_modal_visible = false;
+                                root.submit_password(root.password_archive_path, pass_input.text);
+                                pass_input.text = "";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    DropArea {
+        width: 100%; height: 100%;
+        dropped(event) => {
+            root.files_dropped(event.data);
+        }
+    }
+}

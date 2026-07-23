@@ -1,0 +1,132 @@
+[package]
+name = "picaview"
+version = "0.1.0"
+description = "PicaView - 极简桌面看图软件"
+authors = ["PicaView Team"]
+license = "MIT"
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+default-run = "picaview"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata.packager]
+product-name = "PicaView"
+identifier = "com.picaview.app"
+version = "0.1.0"
+icons = ["assets/icons/icon.ico"]
+binaries = [
+    { path = "picaview", main = true }
+]
+
+[features]
+default = []
+
+[lib]
+name = "picaview_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "picaview"
+path = "src/main.rs"
+
+[[bin]]
+name = "picaview-ep"
+path = "src/bin/main_ep.rs"
+
+[[bin]]
+name = "bench_load_jpeg"
+path = "src/bin/bench_load_jpeg.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+strip = "symbols"
+
+[profile.test]
+panic = "unwind"
+
+[profile.bench]
+panic = "unwind"
+
+[build-dependencies]
+slint-build = "1.15.1"
+winres = "0.1"
+
+[dependencies]
+trash = "5.2"
+wallpaper = "3.2.0"
+
+# Slint & WGPU (EP Engine)
+slint = { version = "1.15.1", features = ["renderer-femtovg-wgpu", "unstable-wgpu-28"] }
+i-slint-backend-winit = "1.15.1"
+wgpu = { version = "28.0", features = ["wgsl"] }
+winit = { version = "0.30", features = ["rwh_06"] }
+
+# WGPU Buffer mapping
+bytemuck = { version = "1.16", features = ["derive"] }
+glam = "0.29"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+rayon = "1.8"
+
+# Image processing
+image = { version = "0.25", features = ["jpeg", "png", "gif", "bmp", "webp", "tiff"] }
+tiff = "0.10.3"
+libjpeg-turbo-rs = "0.6"
+zune-jpeg = "0.5"
+zune-core = "0.5"
+blake3 = "1.5"
+kamadak-exif = "0.5.5"
+lcms2 = "6.0"
+zip = { version = "0.6.6", default-features = false, features = ["deflate", "aes-crypto"] }
+sevenz-rust = { version = "0.6", features = ["aes256"] }
+
+# File system operations
+walkdir = "2.5"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+
+# Base64 encoding
+base64 = "0.22"
+dashmap = "6.0"
+lru = "0.12"
+tempfile = "3.8"
+
+tracing-appender = "0.2.3"
+tracing-futures = "0.2.5"
+url = "2.5"
+urlencoding = "2.1.3"
+rfd = { version = "0.16.0", default-features = false, features = ["gtk3"] }
+arboard = "3.6.1"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61.3", features = ["Win32_Graphics_Imaging", "Win32_System_Com", "Win32_Foundation", "Win32_System_Memory", "Win32_System_DataExchange", "Win32_UI_Shell", "Win32_System_Ole", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.52", features = [
+    "Win32_System_Threading",
+    "Win32_Foundation",
+    "Win32_System_Pipes",
+    "Win32_Storage_FileSystem",
+    "Win32_Security",
+    "Win32_System_IO",
+    "Win32_Graphics_Gdi"
+] }
+
+[dev-dependencies]
+# tempfile 移动到了 dependencies
