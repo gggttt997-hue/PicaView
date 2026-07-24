@@ -258,11 +258,10 @@ impl WgpuRenderer {
                     self.upload_base(image, Some(path), physical_width, physical_height);
                 }
                 EngineCommand::SetImagePath { path } => {
-                    if self.is_long_image
-                        && self.current_path.as_ref() != Some(&path) {
-                            self.tile_cache.clear();
-                            self.pending_tiles.clear();
-                        }
+                    if self.is_long_image && self.current_path.as_ref() != Some(&path) {
+                        self.tile_cache.clear();
+                        self.pending_tiles.clear();
+                    }
                     self.current_path = Some(path);
                 }
                 EngineCommand::SetChannelMode { mode } => {

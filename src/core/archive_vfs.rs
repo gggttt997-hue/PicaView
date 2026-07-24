@@ -362,7 +362,7 @@ impl ArchiveVfs for CliStreamVfs {
         if !output.status.success() {
             let err_str = String::from_utf8_lossy(&output.stderr).to_lowercase();
             let out_str = String::from_utf8_lossy(&output.stdout).to_lowercase();
-            if err_str.contains("wrong password") 
+            if err_str.contains("wrong password")
                 || err_str.contains("enter password")
                 || err_str.contains("break signaled")
                 || out_str.contains("wrong password")
@@ -428,8 +428,13 @@ impl ArchiveVfs for UnRarVfs {
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr).to_lowercase();
             let out_msg = String::from_utf8_lossy(&output.stdout).to_lowercase();
-            if code == 11 || code == 3 || err_msg.contains("password") || err_msg.contains("checksum") ||
-               out_msg.contains("password") || out_msg.contains("checksum") {
+            if code == 11
+                || code == 3
+                || err_msg.contains("password")
+                || err_msg.contains("checksum")
+                || out_msg.contains("password")
+                || out_msg.contains("checksum")
+            {
                 return Err(PicaViewError::PasswordRequired);
             }
             return Err(PicaViewError::general(format!(
@@ -503,8 +508,13 @@ impl ArchiveVfs for UnRarVfs {
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr).to_lowercase();
             let out_msg = String::from_utf8_lossy(&output.stdout).to_lowercase();
-            if code == 11 || code == 3 || err_msg.contains("password") || err_msg.contains("checksum") ||
-               out_msg.contains("password") || out_msg.contains("checksum") {
+            if code == 11
+                || code == 3
+                || err_msg.contains("password")
+                || err_msg.contains("checksum")
+                || out_msg.contains("password")
+                || out_msg.contains("checksum")
+            {
                 return Err(PicaViewError::PasswordRequired);
             }
             return Err(PicaViewError::general(format!(

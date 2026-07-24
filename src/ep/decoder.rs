@@ -534,8 +534,7 @@ pub enum TiledDecoder {
 impl TiledDecoder {
     pub fn new(path: &Path) -> Result<Self> {
         // 对于非压缩包内的常规文件，优先尝试 WIC
-        if crate::core::image_loader::parse_archive_path(path.to_string_lossy().as_ref())
-            .is_none()
+        if crate::core::image_loader::parse_archive_path(path.to_string_lossy().as_ref()).is_none()
         {
             if let Ok(wic_dec) = WicTiledDecoder::new(path) {
                 return Ok(TiledDecoder::Wic(wic_dec));
