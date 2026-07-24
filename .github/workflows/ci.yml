@@ -1,0 +1,132 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  SLINT_BACKEND: winit # 在 CI 环境中强制使用 winit 后端进行无头检查
+
+jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libfontconfig1-dev \
+            libx11-dev \
+            libxft-dev \
+            libxext-dev \
+            libxfixes-dev \
+            libxi-dev \
+            libxcursor-dev \
+            libxrender-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libasound2-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            pkg-config \
+            cmake
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+
+      - name: Linting (Clippy)
+        run: cargo clippy
+
+      - name: Unit and Integration Tests (with Virtual X server)
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          xvfb-run --auto-servernum cargo test --lib --bins
+
+      - name: Security Audit
+        uses: rustsec/audit-check@v2.0.0
+        continue-on-error: true
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Performance Tests (Compile Only with Virtual X server)
+        run: xvfb-run --auto-servernum cargo test --no-run --test bench_decode --test bench_scan
+
+  build:
+    name: Build and Release
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-latest
+            os: linux
+          - platform: windows-latest
+            os: windows
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libfontconfig1-dev \
+            libx11-dev \
+            libxft-dev \
+            libxext-dev \
+            libxfixes-dev \
+            libxi-dev \
+            libxcursor-dev \
+            libxrender-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libasound2-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            pkg-config \
+            cmake
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-packager
+        run: cargo install cargo-packager
+
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Bundle Application
+        run: cargo packager --release
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: picaview-${{ matrix.os }}
+          path: target/release/bundle/
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/bundle/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

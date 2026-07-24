@@ -1,0 +1,94 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build & Sign Windows MSI
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-wix
+        run: cargo install cargo-wix
+
+      - name: Build MSI Installer
+        run: cargo wix --nocapture
+        
+      - name: Setup Code Signing Certificate
+        if: env.CERTIFICATE_BASE64 != ''
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.SIGNING_CERTIFICATE_BASE64 }}
+        run: |
+          $pfx_cert_byte = [System.Convert]::FromBase64String($env:CERTIFICATE_BASE64)
+          [IO.File]::WriteAllBytes("$pwd\Cert.pfx", $pfx_cert_byte)
+
+      - name: Sign MSI Package (Optional)
+        if: env.CERTIFICATE_BASE64 != ''
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.SIGNING_CERTIFICATE_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          $msiFile = Get-ChildItem -Path target\wix -Filter *.msi | Select-Object -First 1
+          if ($msiFile) {
+            & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\signtool.exe" sign /f "$pwd\Cert.pfx" /p "$env:CERT_PASSWORD" /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a $msiFile.FullName
+            Write-Host "Successfully signed $($msiFile.Name)"
+          } else {
+            Write-Error "MSI file not found for signing"
+          }
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/wix/*.msi
+          generate_release_notes: true
+
+      - name: Cleanup Certificate
+        if: always()
+        run: |
+          if (Test-Path "$pwd\Cert.pfx") { Remove-Item "$pwd\Cert.pfx" -Force }
+
+  build-linux:
+    name: Build Linux Portable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfontconfig1-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libglib2.0-dev libgtk-3-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Package Tarball
+        run: |
+          cd target/release
+          tar -czvf ../../picaview-linux-x86_64.tar.gz picaview
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: picaview-linux-x86_64.tar.gz
