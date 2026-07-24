@@ -256,6 +256,7 @@ impl ArchiveVfs for CliStreamVfs {
         if let Some(pass) = password {
             cmd.arg(format!("-p{}", pass));
         } else {
+            cmd.arg("-p");
             cmd.stdin(std::process::Stdio::null());
         }
 
@@ -271,6 +272,8 @@ impl ArchiveVfs for CliStreamVfs {
                 || out_str.contains("wrong password")
                 || err_str.contains("enter password")
                 || out_str.contains("enter password")
+                || err_str.contains("break signaled")
+                || out_str.contains("break signaled")
             {
                 return Err(PicaViewError::PasswordRequired);
             }
@@ -348,6 +351,7 @@ impl ArchiveVfs for CliStreamVfs {
         if let Some(pass) = password {
             cmd.arg(format!("-p{}", pass));
         } else {
+            cmd.arg("-p");
             cmd.stdin(std::process::Stdio::null());
         }
 
@@ -357,7 +361,14 @@ impl ArchiveVfs for CliStreamVfs {
 
         if !output.status.success() {
             let err_str = String::from_utf8_lossy(&output.stderr).to_lowercase();
-            if err_str.contains("wrong password") || err_str.contains("enter password") {
+            let out_str = String::from_utf8_lossy(&output.stdout).to_lowercase();
+            if err_str.contains("wrong password") 
+                || err_str.contains("enter password")
+                || err_str.contains("break signaled")
+                || out_str.contains("wrong password")
+                || out_str.contains("enter password")
+                || out_str.contains("break signaled")
+            {
                 return Err(PicaViewError::PasswordRequired);
             }
             return Err(PicaViewError::general(format!(
@@ -413,14 +424,17 @@ impl ArchiveVfs for UnRarVfs {
         let output = cmd
             .output()
             .map_err(|e| PicaViewError::general(e.to_string()))?;
+        let code = output.status.code().unwrap_or(0);
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr).to_lowercase();
-            if err_msg.contains("password") || err_msg.contains("checksum") {
+            let out_msg = String::from_utf8_lossy(&output.stdout).to_lowercase();
+            if code == 11 || code == 3 || err_msg.contains("password") || err_msg.contains("checksum") ||
+               out_msg.contains("password") || out_msg.contains("checksum") {
                 return Err(PicaViewError::PasswordRequired);
             }
             return Err(PicaViewError::general(format!(
-                "UnRar list failed: {}",
-                err_msg
+                "UnRar list failed: {}\n{}",
+                err_msg, out_msg
             )));
         }
 
@@ -468,7 +482,7 @@ impl ArchiveVfs for UnRarVfs {
     fn extract_file(&mut self, entry_name: &str, password: Option<&str>) -> Result<Vec<u8>> {
         let entry_name_win = entry_name.replace('/', "\\");
         let mut cmd = std::process::Command::new(&self.executable);
-        cmd.arg("p").arg("-inul");
+        cmd.arg("p").arg("-idq");
         if let Some(p) = password {
             cmd.arg(format!("-p{}", p));
         } else {
@@ -485,14 +499,17 @@ impl ArchiveVfs for UnRarVfs {
         let output = cmd
             .output()
             .map_err(|e| PicaViewError::general(e.to_string()))?;
+        let code = output.status.code().unwrap_or(0);
         if !output.status.success() {
             let err_msg = String::from_utf8_lossy(&output.stderr).to_lowercase();
-            if err_msg.contains("password") || err_msg.contains("checksum") {
+            let out_msg = String::from_utf8_lossy(&output.stdout).to_lowercase();
+            if code == 11 || code == 3 || err_msg.contains("password") || err_msg.contains("checksum") ||
+               out_msg.contains("password") || out_msg.contains("checksum") {
                 return Err(PicaViewError::PasswordRequired);
             }
             return Err(PicaViewError::general(format!(
-                "UnRar extract failed: {}",
-                err_msg
+                "UnRar extract failed: {}\n{}",
+                err_msg, out_msg
             )));
         }
 
@@ -583,10 +600,17 @@ fn locate_7z_executable(ext: &str) -> String {
             } else {
                 // 1. 开发调试环境回退查找本地项目根目录下的 vendor
                 if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
+                    let dev_p7z = std::path::Path::new(&manifest_dir)
+                        .join("vendor")
+                        .join("bin")
+                        .join("7z.exe");
                     let dev_p7za = std::path::Path::new(&manifest_dir)
                         .join("vendor")
                         .join("bin")
                         .join("7za.exe");
+                    if dev_p7z.exists() {
+                        return dev_p7z.to_string_lossy().to_string();
+                    }
                     if dev_p7za.exists() {
                         return dev_p7za.to_string_lossy().to_string();
                     }

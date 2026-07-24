@@ -45,7 +45,9 @@ impl AssetBrowserService {
             let archive_path_str = archive_path;
             tokio::spawn(async move {
                 if let Ok(mut vfs) = crate::core::archive_vfs::mount_archive(&archive_path_buf) {
-                    if let Ok(entries) = vfs.list_entries(None) {
+                    let pass_store = crate::core::archive_vfs::archive_passwords().read().unwrap();
+                    let pass = pass_store.get(&archive_path_str).map(|s| s.as_str());
+                    if let Ok(entries) = vfs.list_entries(pass) {
                         let mut batch = Vec::new();
                         for (name, size) in entries {
                             if crate::utils::image_utils::is_supported_by_extension(
