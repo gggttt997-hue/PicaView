@@ -71,7 +71,7 @@ fn test_rebuild_exif_indices_skip_non_exif() {
 // Helper: create a temporary directory containing test files
 fn create_test_directory() -> (TempDir, PathBuf) {
     let temp_dir = TempDir::new().unwrap();
-    let dir_path = temp_dir.path().to_path_buf();
+    let dir_path = crate::utils::path_utils::normalize_native_path(temp_dir.path().to_path_buf());
     let file_names = ["a.jpg", "b.png", "c.gif", "d.bmp", "not_image.txt"];
     for name in &file_names {
         let file_path = dir_path.join(name);
