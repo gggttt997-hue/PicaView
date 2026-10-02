@@ -539,12 +539,10 @@ impl FileManager {
                     .sort_by(|a, b| crate::utils::path_utils::compare_natural(&a.name, &b.name));
             }
             SortCriteria::Size => {
-                self.image_infos
-                    .sort_by_key(|a| a.size.unwrap_or(0));
+                self.image_infos.sort_by_key(|a| a.size.unwrap_or(0));
             }
             SortCriteria::Date => {
-                self.image_infos
-                    .sort_by_key(|a| a.modified_ms.unwrap_or(0));
+                self.image_infos.sort_by_key(|a| a.modified_ms.unwrap_or(0));
             }
         }
 
