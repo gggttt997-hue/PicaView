@@ -133,11 +133,11 @@ mod tests {
         assert_eq!(default_s.hud_dismiss_delay_ms, 800);
         assert_eq!(default_s.max_cache_size_mb, 512);
         assert_eq!(default_s.mem_limit_fraction, 0.125);
-        assert_eq!(default_s.allow_multi_instance, false);
+        assert!(!default_s.allow_multi_instance);
         assert_eq!(default_s.scroll_mode, "zoom");
         assert_eq!(default_s.default_view_mode, "single");
         assert_eq!(default_s.language, "zh-CN");
-        assert_eq!(default_s.remember_window_geometry, true);
+        assert!(default_s.remember_window_geometry);
     }
 
     #[test]

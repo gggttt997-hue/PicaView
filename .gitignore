@@ -1,2 +1,27 @@
-﻿target/
+# Build artifacts
+target/
+dist/
+*.msi
+*.zip
+*.tar.gz
+
+# Local / Test assets & Private data
 PNGs/
+.pngs/
+*.log
+*.pfx
+folder_positions.json
+history.json
+library_tags.json
+
+# Cache & Temporary
+.cache/
+.history/
+scratch/
+.antigravitycli/
+
+# IDE & Editors
+.idea/
+.vscode/
+*.swp
+*~
