@@ -540,11 +540,11 @@ impl FileManager {
             }
             SortCriteria::Size => {
                 self.image_infos
-                    .sort_by(|a, b| a.size.unwrap_or(0).cmp(&b.size.unwrap_or(0)));
+                    .sort_by_key(|a| a.size.unwrap_or(0));
             }
             SortCriteria::Date => {
                 self.image_infos
-                    .sort_by(|a, b| a.modified_ms.unwrap_or(0).cmp(&b.modified_ms.unwrap_or(0)));
+                    .sort_by_key(|a| a.modified_ms.unwrap_or(0));
             }
         }
 
